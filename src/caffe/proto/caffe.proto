@@ -532,6 +532,7 @@ message LayerParameter {
   optional RecurrentParameter recurrent_param = 146;
   optional ReductionParameter reduction_param = 136;
   optional ReLUParameter relu_param = 123;
+  optional ReLU6Parameter relu6_param = 523;
   optional ReshapeParameter reshape_param = 133;
   optional ScaleParameter scale_param = 142;
   optional SigmoidParameter sigmoid_param = 124;
@@ -666,12 +667,19 @@ message NoiseParameter {
 }
 
 message InterpParameter {
-  optional int32 height = 1 [default = 0]; // Height of output
-  optional int32 width = 2 [default = 0]; // Width of output
-  optional int32 zoom_factor = 3 [default = 1]; // zoom factor
-  optional int32 shrink_factor = 4 [default = 1]; // shrink factor
+  optional int32 height = 1; // Height of output
+  optional int32 width = 2; // Width of output
+  optional int32 zoom_factor = 3; // zoom factor
+  optional int32 shrink_factor = 4; // shrink factor
   optional int32 pad_beg = 5 [default = 0]; // padding at begin of input
   optional int32 pad_end = 6 [default = 0]; // padding at end of input
+  optional bool  align_corners = 7 [default = false];
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+    MLU = 2;
+  }
+  optional Engine engine = 8 [default = DEFAULT];
 }
 
 // Message that stores parameters used by data transformer for distortion policy
@@ -1513,6 +1521,16 @@ message ReLUParameter {
   optional Engine engine = 2 [default = DEFAULT];
 }
 
+message ReLU6Parameter {
+  optional float negative_slope = 1 [default = 0];
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+    CUDNN = 2;
+  }
+  optional Engine engine = 2 [default = DEFAULT];
+}
+
 message ReshapeParameter {
   // Specify the output dimensions. If some of the dimensions are set to 0,
   // the corresponding dimension from the bottom layer is used (unchanged).
@@ -1815,6 +1833,7 @@ message V1LayerParameter {
   optional PoolingParameter pooling_param = 19;
   optional PowerParameter power_param = 21;
   optional ReLUParameter relu_param = 30;
+  optional ReLU6Parameter relu6_param = 55;
   optional SigmoidParameter sigmoid_param = 38;
   optional SoftmaxParameter softmax_param = 39;
   optional SliceParameter slice_param = 31;
