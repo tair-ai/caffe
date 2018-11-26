@@ -25,6 +25,15 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   } else {
     output_labels_ = true;
   }
+  if (top.size() == 3) {
+    output_addlabels_ = true;
+  } else {
+    output_addlabels_ = false;
+  }
+  if(output_addlabels_)
+    DLOG(INFO)<<"Look at here: output_labels_: true";
+  else
+    DLOG(INFO)<<"Look at here: output_labels_: false";
   data_transformer_.reset(
       new DataTransformer<Dtype>(transform_param_, this->phase_));
   data_transformer_->InitRand();
@@ -55,6 +64,9 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
     if (this->output_labels_) {
       prefetch_[i].label_.mutable_cpu_data();
     }
+    if (this->output_addlabels_) {
+      prefetch_[i].addlabel_.mutable_cpu_data();
+    }
   }
 #ifndef CPU_ONLY
   if (Caffe::mode() == Caffe::GPU) {
@@ -62,6 +74,9 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
       prefetch_[i].data_.mutable_gpu_data();
       if (this->output_labels_) {
         prefetch_[i].label_.mutable_gpu_data();
+      }
+      if (this->output_addlabels_) {
+        prefetch_[i].addlabel_.mutable_gpu_data();
       }
     }
   }
@@ -120,81 +135,24 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
     caffe_copy(batch->label_.count(), batch->label_.cpu_data(),
         top[1]->mutable_cpu_data());
   }
+  
+  if (this->output_addlabels_) {
+    // Reshape to loaded labels.
+    top[2]->ReshapeLike(batch->addlabel_);
+    // Copy the labels.
+    caffe_copy(batch->addlabel_.count(), batch->addlabel_.cpu_data(),
+        top[2]->mutable_cpu_data());
+
+  }
 
   prefetch_free_.push(batch);
 }
 
-template <typename Dtype>
-void ImageDimPrefetchingDataLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  BaseDataLayer<Dtype>::LayerSetUp(bottom, top);
-  if (top.size() == 3) {
-    output_data_dim_ = true;
-  } else {
-    output_data_dim_ = false;
-  }
-  for (int i = 0; i < BasePrefetchingDataLayer<Dtype>::PREFETCH_COUNT; ++i) {
-    this->prefetch_[i].data_.mutable_cpu_data();
-    if (this->output_labels_) {
-      this->prefetch_[i].label_.mutable_cpu_data();
-    }
-    if (output_data_dim_) {
-      this->prefetch_[i].dim_.mutable_cpu_data();
-    }
-  }
-#ifndef CPU_ONLY
-  if (Caffe::mode() == Caffe::GPU) {
-    for (int i = 0; i < BasePrefetchingDataLayer<Dtype>::PREFETCH_COUNT; ++i) {
-      this->prefetch_[i].data_.mutable_gpu_data();
-      if (this->output_labels_) {
-        this->prefetch_[i].label_.mutable_gpu_data();
-      }
-      if (output_data_dim_) {
-	this->prefetch_[i].dim_.mutable_gpu_data();
-      }
-    }
-  }
-#endif
-  DLOG(INFO) << "Initializing prefetch";
-  this->data_transformer_->InitRand();
-  BasePrefetchingDataLayer<Dtype>::StartInternalThread();
-  DLOG(INFO) << "Prefetch initialized.";
-}
-
-template <typename Dtype>
-void ImageDimPrefetchingDataLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  Batch<Dtype>* batch = 
-    this->prefetch_full_.pop("Data layer prefetch queue empty");
-  // Reshape to loaded data.
-  top[0]->ReshapeLike(batch->data_);
-  // Copy the data
-  caffe_copy(batch->data_.count(), batch->data_.cpu_data(),
-             top[0]->mutable_cpu_data());
-  DLOG(INFO) << "Prefetch copied";
-  if (this->output_labels_) {
-    // Reshape to loaded labels.
-    top[1]->ReshapeLike(batch->label_);
-    // Copy the labels.
-    caffe_copy(batch->label_.count(), batch->label_.cpu_data(),
-        top[1]->mutable_cpu_data());
-  }
-  if (output_data_dim_) {
-    top[2]->ReshapeLike(batch->dim_);
-    caffe_copy(batch->dim_.count(), batch->dim_.cpu_data(),
-	       top[2]->mutable_cpu_data());
-  }
-
-  this->prefetch_free_.push(batch);
-}
-
-
 #ifdef CPU_ONLY
 STUB_GPU_FORWARD(BasePrefetchingDataLayer, Forward);
-STUB_GPU_FORWARD(ImageDimPrefetchingDataLayer, Forward);
 #endif
 
 INSTANTIATE_CLASS(BaseDataLayer);
 INSTANTIATE_CLASS(BasePrefetchingDataLayer);
-INSTANTIATE_CLASS(ImageDimPrefetchingDataLayer);
-} // namespace caffe
+
+}  // namespace caffe

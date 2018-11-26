@@ -307,7 +307,7 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
 }
 
-INSTANTIATE_CLASS(AnnotatedDataLayer);
-REGISTER_LAYER_CLASS(AnnotatedData);
+// INSTANTIATE_CLASS(AnnotatedDataLayer);
+// REGISTER_LAYER_CLASS(AnnotatedData);
 
 }  // namespace caffe

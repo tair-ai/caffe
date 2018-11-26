@@ -15,6 +15,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
 
+
 namespace caffe {
 
 template <typename Dtype>
@@ -37,16 +38,11 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   const string& source = this->layer_param_.image_data_param().source();
   LOG(INFO) << "Opening file " << source;
   std::ifstream infile(source.c_str());
-  string line;
-  size_t pos;
+  string filename;
   int label;
-  while (std::getline(infile, line)) {
-    pos = line.find_last_of(' ');
-    label = atoi(line.substr(pos + 1).c_str());
-    lines_.push_back(std::make_pair(line.substr(0, pos), label));
+  while (infile >> filename >> label) {
+    lines_.push_back(std::make_pair(filename, label));
   }
-
-  CHECK(!lines_.empty()) << "File is empty";
 
   if (this->layer_param_.image_data_param().shuffle()) {
     // randomly shuffle data
@@ -148,6 +144,7 @@ void ImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->transformed_data_.set_cpu_data(prefetch_data + offset);
     this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
     trans_time += timer.MicroSeconds();
+
 
     prefetch_label[item_id] = lines_[lines_id_].second;
     // go to the next iter

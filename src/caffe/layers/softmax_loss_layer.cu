@@ -5,7 +5,27 @@
 #include "caffe/layers/softmax_loss_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
+#ifdef USE_OPENCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#endif
+
 namespace caffe {
+
+// cv::Mat DecodeDatumToCVMatNative(const Datum& datum) {
+//   cv::Mat cv_img;
+//   CHECK(datum.encoded()) << "Datum not encoded";
+//   const string& data = datum.data();
+//   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
+//   cv_img = cv::imdecode(vec_data, -1);
+//   if (!cv_img.data) {
+//     LOG(ERROR) << "Could not decode datum ";
+//   }
+//   return cv_img;
+// }
+
 
 template <typename Dtype>
 __global__ void SoftmaxLossForwardGPU(const int nthreads,
@@ -56,9 +76,8 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
       has_ignore_label_) {
     caffe_gpu_asum(nthreads, counts, &valid_count);
   }
-  Dtype normalizer = LossLayer<Dtype>::GetNormalizer(
-      normalization_, outer_num_, inner_num_, valid_count);
-  top[0]->mutable_cpu_data()[0] = loss / normalizer;
+  top[0]->mutable_cpu_data()[0] = loss / get_normalizer(normalization_,
+                                                        valid_count);
   if (top.size() == 2) {
     top[1]->ShareData(prob_);
   }
@@ -118,9 +137,8 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         has_ignore_label_) {
       caffe_gpu_asum(nthreads, counts, &valid_count);
     }
-    Dtype normalizer = LossLayer<Dtype>::GetNormalizer(
-        normalization_, outer_num_, inner_num_, valid_count);
-    const Dtype loss_weight = top[0]->cpu_diff()[0] / normalizer;
+    const Dtype loss_weight = top[0]->cpu_diff()[0] /
+                              get_normalizer(normalization_, valid_count);
     caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff);
   }
 }
