@@ -511,7 +511,6 @@ message LayerParameter {
   optional HDF5DataParameter hdf5_data_param = 112;
   optional HDF5OutputParameter hdf5_output_param = 113;
   optional HingeLossParameter hinge_loss_param = 114;
-  optional ImageDataParameter image_data_param = 115;
   optional InfogainLossParameter infogain_loss_param = 116;
   optional InnerProductParameter inner_product_param = 117;
   optional InputParameter input_param = 143;
@@ -527,6 +526,7 @@ message LayerParameter {
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
   optional PReLUParameter prelu_param = 131;
+  optional ImageDataParameter image_data_param = 15;
   optional PriorBoxParameter prior_box_param = 203;
   optional PythonParameter python_param = 130;
   optional RecurrentParameter recurrent_param = 146;
@@ -1331,7 +1331,6 @@ message MultiBoxLossParameter {
   optional int32 sample_size = 22 [default = 64];
   optional bool use_prior_for_nms = 23 [default = false];
 }
-
 message MVNParameter {
   // This parameter can be set to false to normalize mean only
   optional bool normalize_variance = 1 [default = true];
