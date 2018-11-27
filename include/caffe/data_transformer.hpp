@@ -50,13 +50,6 @@ class DataTransformer {
   void Transform(const vector<Datum> & datum_vector,
                 Blob<Dtype>* transformed_blob);
 
-  // Lequan add
-  void TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
-    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
-    const int ignore_label);
-  //void TransformSegAndPad(const cv::Mat& cv_seg, Blob<Dtype>* transformed_blob);
-  //void TransformAndPad(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
-  // end jay
 #ifdef USE_OPENCV
   /**
    * @brief Applies the transformation defined in the data layer's
@@ -70,7 +63,9 @@ class DataTransformer {
    */
   void Transform(const vector<cv::Mat> & mat_vector,
                 Blob<Dtype>* transformed_blob);
-
+  void Transform(const cv::Mat& cv_img, const cv::Mat& cv_label,
+                Blob<Dtype>* transformed_image,
+                Blob<Dtype>* transformed_label);
   /**
    * @brief Applies the transformation defined in the data layer's
    * transform_param block to a cv::Mat
@@ -96,6 +91,14 @@ class DataTransformer {
    *    input blob. It can be part of top blob's data.
    */
   void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
+
+  void TransformImgAndSeg(const std::vector<cv::Mat>& cv_img_seg,
+    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
+    const int ignore_label);
+
+  void TransformImgAndSeg2(const std::vector<cv::Mat>& cv_img_seg,
+    Blob<Dtype>* transformed_data_blob, Blob<Dtype>* transformed_label_blob,
+    const int ignore_label);
 
   /**
    * @brief Infers the shape of transformed_blob will have when
@@ -144,6 +147,7 @@ class DataTransformer {
    *    A uniformly random integer value from ({0, 1, ..., n-1}).
    */
   virtual int Rand(int n);
+  virtual float Uniform(const float min, const float max);
 
   void Transform(const Datum& datum, Dtype* transformed_data);
   // Tranformation parameters
@@ -154,6 +158,7 @@ class DataTransformer {
   Phase phase_;
   Blob<Dtype> data_mean_;
   vector<Dtype> mean_values_;
+  vector<Dtype> scale_factors_;
 };
 
 }  // namespace caffe

@@ -4,28 +4,16 @@
 #include <vector>
 
 #include "caffe/blob.hpp"
+#include "caffe/common.hpp"
 #include "caffe/layer.hpp"
-#include "caffe/proto/caffe.pb.h"
-#include "caffe/util/im2col.hpp"
 #include "caffe/util/confusion_matrix.hpp"
+#include "caffe/proto/caffe.pb.h"
 
 namespace caffe {
 
-/** Jay add and lequan modify
- * @brief Computes the classification accuracy for pixel-wise one-of-many
- *        classification task.
- */
 template <typename Dtype>
 class SegAccuracyLayer : public Layer<Dtype> {
  public:
-  /**
-   * @param param provides AccuracyParameter accuracy_param,
-   *     with AccuracyLayer options:
-   *   - top_k (\b optional, default 1).
-   *     Sets the maximum rank @f$ k @f$ at which a prediction is considered
-   *     correct.  For example, if @f$ k = 5 @f$, a prediction is counted
-   *     correct if the correct label is among the top 5 predicted labels.
-   */
   explicit SegAccuracyLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
@@ -33,7 +21,7 @@ class SegAccuracyLayer : public Layer<Dtype> {
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-   virtual inline const char* type() const { return "SegAccuracy"; }
+  virtual inline const char* type() const { return "SegAccuracy"; }
 
   virtual inline int ExactNumBottomBlobs() const { return 2; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
@@ -66,7 +54,6 @@ class SegAccuracyLayer : public Layer<Dtype> {
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-
   /// @brief Not implemented -- AccuracyLayer cannot be used as a loss.
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
@@ -81,7 +68,6 @@ class SegAccuracyLayer : public Layer<Dtype> {
   std::set<int> ignore_label_;
 };
 
-}
+}  // namespace caffe
 
-
-#endif 
+#endif  // CAFFE_SEG_ACCURACY_HPP_

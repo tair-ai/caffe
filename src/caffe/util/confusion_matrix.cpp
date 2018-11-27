@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 #include "caffe/common.hpp"
 #include "caffe/util/confusion_matrix.hpp"
@@ -19,7 +20,9 @@ ConfusionMatrix::ConfusionMatrix(const int m) {
 
 ConfusionMatrix::~ConfusionMatrix() {}
 
-int ConfusionMatrix::numRows() const { 
+int ConfusionMatrix::numRows() const {
+  if (_matrix.empty())
+    return 0;
   return (int) _matrix.size();
 }
 
@@ -69,16 +72,18 @@ void ConfusionMatrix::printCounts(const char *header) const {
   } else {
     LOG(INFO) << header;
   }
+  std::stringstream ss;
+
   for (size_t i = 0; i < _matrix.size(); i++) {
-    LOG(INFO) << ROW_BEGIN;
+    ss << "\n";
     for (size_t j = 0; j < _matrix[i].size(); j++) {
       if (j > 0) {
-	LOG(INFO) << COL_SEP;
+        ss << " | ";
       }
-      LOG(INFO) << _matrix[i][j];
+      ss << _matrix[i][j];
     }
-    LOG(INFO) << ROW_END;
   }
+  LOG(INFO) << ss.str();
 }
 
 void ConfusionMatrix::printRowNormalized(const char *header) const {

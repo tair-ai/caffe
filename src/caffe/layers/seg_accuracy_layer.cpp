@@ -9,8 +9,6 @@
 #include "caffe/layers/seg_accuracy_layer.hpp"
 
 
-// TODO: check we should clear confusion_matrix somewhere!
-
 namespace caffe {
 
 template <typename Dtype>
@@ -37,7 +35,7 @@ void SegAccuracyLayer<Dtype>::Reshape(
     << "The data should have the same height as label.";
   CHECK_EQ(bottom[0]->width(), bottom[1]->width())
     << "The data should have the same width as label.";
- 
+  //confusion_matrix_.clear(); 
   top[0]->Reshape(1, 1, 1, 3);
 }
 
@@ -47,7 +45,6 @@ void SegAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   int num = bottom[0]->num();
-  //int dim = bottom[0]->count() / bottom[0]->num();
   int channels = bottom[0]->channels();
   int height = bottom[0]->height();
   int width = bottom[0]->width();
@@ -56,8 +53,10 @@ void SegAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   int top_k = 1;  // only support for top_k = 1
 
-  // remove old predictions if exists
-  confusion_matrix_.clear();  
+  // remove old predictions if reset() flag is true
+  if (this->layer_param_.seg_accuracy_param().reset()) {
+    confusion_matrix_.clear();
+  }
 
   for (int i = 0; i < num; ++i) {
     for (int h = 0; h < height; ++h) {
@@ -85,42 +84,27 @@ void SegAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	  // current position is not "255", indicating ambiguous position
 	  confusion_matrix_.accumulate(gt_label, bottom_data_vector[0].second);
 	} else {
-	  LOG(FATAL) << "Unexpected label " << gt_label;
-	}
+	  LOG(FATAL) << "Unexpected label " << gt_label << ". num: " << i 
+              << ". row: " << h << ". col: " << w;
+      }
       }
     }
     bottom_data  += bottom[0]->offset(1);
     bottom_label += bottom[1]->offset(1);
   }
 
+  /* for debug
+  LOG(INFO) << "confusion matrix info:" << confusion_matrix_.numRows() << "," << confusion_matrix_.numCols();
+  confusion_matrix_.printCounts();
+  */
+
   // we report all the resuls
   top[0]->mutable_cpu_data()[0] = (Dtype)confusion_matrix_.accuracy();
   top[0]->mutable_cpu_data()[1] = (Dtype)confusion_matrix_.avgRecall(false);
   top[0]->mutable_cpu_data()[2] = (Dtype)confusion_matrix_.avgJaccard();
-
-  /*
-  Dtype result;
-
-  switch (this->layer_param_.seg_accuracy_param().metric()) {
-  case SegAccuracyParameter_AccuracyMetric_PixelAccuracy:
-    result = (Dtype)confusion_matrix_.accuracy();
-    break;
-  case SegAccuracyParameter_AccuracyMetric_ClassAccuracy:
-    result = (Dtype)confusion_matrix_.avgRecall();
-    break;
-  case SegAccuracyParameter_AccuracyMetric_PixelIOU:
-    result = (Dtype)confusion_matrix_.avgJaccard();
-    break;
-  default:
-    LOG(FATAL) << "Unknown Segment accuracy metric.";
-  }
-    
-  // LOG(INFO) << "Accuracy: " << accuracy;
-  top[0]->mutable_cpu_data()[0] = result;
-  // Accuracy layer should not be used as a loss function.
-  */
 }
 
 INSTANTIATE_CLASS(SegAccuracyLayer);
 REGISTER_LAYER_CLASS(SegAccuracy);
+
 }  // namespace caffe

@@ -5,27 +5,7 @@
 #include "caffe/layers/softmax_loss_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
-#ifdef USE_OPENCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#endif
-
 namespace caffe {
-
-// cv::Mat DecodeDatumToCVMatNative(const Datum& datum) {
-//   cv::Mat cv_img;
-//   CHECK(datum.encoded()) << "Datum not encoded";
-//   const string& data = datum.data();
-//   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
-//   cv_img = cv::imdecode(vec_data, -1);
-//   if (!cv_img.data) {
-//     LOG(ERROR) << "Could not decode datum ";
-//   }
-//   return cv_img;
-// }
-
 
 template <typename Dtype>
 __global__ void SoftmaxLossForwardGPU(const int nthreads,
